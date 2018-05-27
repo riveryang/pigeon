@@ -8,15 +8,15 @@ import com.dianping.pigeon.remoting.invoker.process.threadpool.ResponseThreadPoo
 
 public class ResponseProcessorFactory {
 
-	private static ResponseProcessor responseProcessor = new ResponseThreadPoolProcessor();
+    private static ResponseProcessor responseProcessor = new ResponseThreadPoolProcessor();
 
-	public static ResponseProcessor selectProcessor() {
-		return responseProcessor;
-	}
+    public static ResponseProcessor selectProcessor() {
+        return responseProcessor;
+    }
 
-	public static void stop() {
-		if (responseProcessor != null) {
-			responseProcessor.stop();
-		}
-	}
+    public static void stop() {
+        if (responseProcessor != null) {
+            responseProcessor.stop();
+        }
+    }
 }

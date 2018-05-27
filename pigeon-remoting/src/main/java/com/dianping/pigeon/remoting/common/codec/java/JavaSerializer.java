@@ -18,47 +18,47 @@ import com.dianping.pigeon.remoting.common.exception.SerializationException;
  */
 public class JavaSerializer extends AbstractSerializer {
 
-	private static ClassLoader classLoader = JavaSerializer.class.getClassLoader();
+    private static ClassLoader classLoader = JavaSerializer.class.getClassLoader();
 
-	@Override
-	public Object deserializeResponse(InputStream is) throws SerializationException {
-		return deserializeRequest(is);
-	}
+    @Override
+    public Object deserializeResponse(InputStream is) throws SerializationException {
+        return deserializeRequest(is);
+    }
 
-	@Override
-	public Object deserializeRequest(InputStream is) throws SerializationException {
-		CompactObjectInputStream coin;
-		try {
-			coin = new CompactObjectInputStream(is, classLoader);
-			try {
-				return coin.readObject();
-			} finally {
-				coin.close();
-			}
-		} catch (Throwable t) {
-			throw new SerializationException(t);
-		}
+    @Override
+    public Object deserializeRequest(InputStream is) throws SerializationException {
+        CompactObjectInputStream coin;
+        try {
+            coin = new CompactObjectInputStream(is, classLoader);
+            try {
+                return coin.readObject();
+            } finally {
+                coin.close();
+            }
+        } catch (Throwable t) {
+            throw new SerializationException(t);
+        }
 
-	}
+    }
 
-	@Override
-	public void serializeResponse(OutputStream os, Object obj) throws SerializationException {
-		serializeRequest(os, obj);
-	}
+    @Override
+    public void serializeResponse(OutputStream os, Object obj) throws SerializationException {
+        serializeRequest(os, obj);
+    }
 
-	@Override
-	public void serializeRequest(OutputStream os, Object obj) throws SerializationException {
-		try {
-			ObjectOutputStream oout = new CompactObjectOutputStream(os);
-			try {
-				oout.writeObject(obj);
-				oout.flush();
-			} finally {
-				oout.close();
-			}
-		} catch (Throwable t) {
-			throw new SerializationException(t);
-		}
-	}
+    @Override
+    public void serializeRequest(OutputStream os, Object obj) throws SerializationException {
+        try {
+            ObjectOutputStream oout = new CompactObjectOutputStream(os);
+            try {
+                oout.writeObject(obj);
+                oout.flush();
+            } finally {
+                oout.close();
+            }
+        } catch (Throwable t) {
+            throw new SerializationException(t);
+        }
+    }
 
 }

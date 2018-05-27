@@ -25,35 +25,35 @@ import com.dianping.pigeon.remoting.provider.process.ProviderProcessInterceptorF
 
 public class WriteResponseProcessFilter implements ServiceInvocationFilter<ProviderContext> {
 
-	private static final Logger logger = LoggerLoader.getLogger(WriteResponseProcessFilter.class);
+    private static final Logger logger = LoggerLoader.getLogger(WriteResponseProcessFilter.class);
 
-	@Override
-	public InvocationResponse invoke(ServiceInvocationHandler handler, ProviderContext invocationContext)
-			throws Throwable {
-		try {
-			ProviderChannel channel = invocationContext.getChannel();
-			InvocationRequest request = invocationContext.getRequest();
-			InvocationResponse response = handler.handle(invocationContext);
-			if (request.getCallType() == Constants.CALLTYPE_REPLY) {
-				invocationContext.getTimeline().add(new TimePoint(TimePhase.P));
-				channel.write(invocationContext, response);
-				invocationContext.getTimeline().add(new TimePoint(TimePhase.P));
-			}
-			if (request.getMessageType() == Constants.MESSAGE_TYPE_SERVICE) {
-				List<ProviderProcessInterceptor> interceptors = ProviderProcessInterceptorFactory.getInterceptors();
-				for (ProviderProcessInterceptor interceptor : interceptors) {
-					interceptor.postInvoke(request, response);
-				}
-				List<ProviderInterceptor> contextInterceptors = ProviderInterceptorFactory.getInterceptors();
-				for (ProviderInterceptor interceptor : contextInterceptors) {
-					interceptor.postInvoke(invocationContext);
-				}
-			}
-			return response;
-		} finally {
-			// ContextUtils.clearContext();
-			// ContextUtils.clearLocalContext();
-		}
-	}
+    @Override
+    public InvocationResponse invoke(ServiceInvocationHandler handler, ProviderContext invocationContext)
+            throws Throwable {
+        try {
+            ProviderChannel channel = invocationContext.getChannel();
+            InvocationRequest request = invocationContext.getRequest();
+            InvocationResponse response = handler.handle(invocationContext);
+            if (request.getCallType() == Constants.CALLTYPE_REPLY) {
+                invocationContext.getTimeline().add(new TimePoint(TimePhase.P));
+                channel.write(invocationContext, response);
+                invocationContext.getTimeline().add(new TimePoint(TimePhase.P));
+            }
+            if (request.getMessageType() == Constants.MESSAGE_TYPE_SERVICE) {
+                List<ProviderProcessInterceptor> interceptors = ProviderProcessInterceptorFactory.getInterceptors();
+                for (ProviderProcessInterceptor interceptor : interceptors) {
+                    interceptor.postInvoke(request, response);
+                }
+                List<ProviderInterceptor> contextInterceptors = ProviderInterceptorFactory.getInterceptors();
+                for (ProviderInterceptor interceptor : contextInterceptors) {
+                    interceptor.postInvoke(invocationContext);
+                }
+            }
+            return response;
+        } finally {
+            // ContextUtils.clearContext();
+            // ContextUtils.clearLocalContext();
+        }
+    }
 
 }

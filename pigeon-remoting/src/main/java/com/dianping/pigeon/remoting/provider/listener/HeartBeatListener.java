@@ -37,6 +37,8 @@ public class HeartBeatListener extends Thread {
     private static volatile HeartBeatListener heartBeatListener = null;
 
     static {
+        // 设置配置变更监听
+        // 用于 refreshInterval 的配置在线更新（如果设置了配置中心）
         registerConfigChangeListener();
     }
 
@@ -56,7 +58,9 @@ public class HeartBeatListener extends Thread {
             String serviceName = providerConfig.getUrl();
             serviceHeartBeatCache.add(serviceName);
 
+            // 防止重复设置
             if(heartBeatListener == null) {
+                // 初始化并启动心跳线程
                 initHeartBeat(configManager.getLocalIp() + ":" + providerConfig.getServerConfig().getActualPort());
             }
 
@@ -71,6 +75,7 @@ public class HeartBeatListener extends Thread {
             serviceHeartBeatCache.remove(serviceName);
 
             if(serviceHeartBeatCache.size() == 0 && heartBeatListener != null) {
+                // 停止心跳线程
                 stopHeartBeat(heartBeatListener.serviceAddress);
             }
 
@@ -81,8 +86,11 @@ public class HeartBeatListener extends Thread {
 
     private static synchronized void initHeartBeat(String serviceAddress) {
         if(heartBeatListener == null) {
+            // HeartBeatReboot是实现接口Thread.UncaughtExceptionHandler的类，主要用于线程崩溃后的处理
+            // 在这里用户心跳线程异常后自动重新设置
             heartBeatListener = new HeartBeatListener("Pigeon-Provider-HeartBeat",new HeartBeatReboot(), true, serviceAddress);
             heartBeatListener.isSendHeartBeat = true;
+            // 启动线程
             heartBeatListener.start();
             //registryManager.registerAppHostList(serviceAddress, configManager.getAppName(), ProviderBootStrap.getHttpServer().getPort());
             monitor.logEvent("PigeonService.heartbeat", "ON", new Date()+"");
@@ -93,6 +101,7 @@ public class HeartBeatListener extends Thread {
         if(serviceHeartBeatCache.size() == 0 && heartBeatListener != null) {
             heartBeatListener.isSendHeartBeat = false;
             heartBeatListener = null;
+            // 删除注册中心的心跳信息
             registryManager.deleteHeartBeat(serviceAddress);
             //registryManager.unregisterAppHostList(serviceAddress, configManager.getAppName());
             monitor.logEvent("PigeonService.heartbeat", "OFF", new Date()+"");
@@ -106,15 +115,19 @@ public class HeartBeatListener extends Thread {
                 Long heartbeat = System.currentTimeMillis();
                 // 写心跳
                 if(serviceHeartBeatCache.size() > 0) {
+                    // 更新注册中心当前应用的时间
+                    // 规则：/DP/HEARTBEAT/host:port --> 当前时间
                     registryManager.updateHeartBeat(serviceAddress, heartbeat);
                 }
 
+                // 适当休眠，等待下次更新应用时间
                 Long interval = refreshInterval - System.currentTimeMillis() + heartbeat;
                 if(interval > 0) {
                     Thread.sleep(interval);
                 }
             }
         } catch (Throwable e) {
+            // 异常就重新创建新线程处理？
             tryRestartThread(this, e);
         } finally {
             // release resources if needed
@@ -145,7 +158,6 @@ public class HeartBeatListener extends Thread {
     }
 
     private static void registerConfigChangeListener(){
-
         configManager.registerConfigChangeListener(new ConfigChangeListener() {
 
             @Override

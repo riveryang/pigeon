@@ -1,8 +1,11 @@
 package com.dianping.pigeon.registry.zookeeper;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import com.dianping.pigeon.registry.config.RegistryConfig;
 import org.apache.commons.lang.StringUtils;
 import org.apache.zookeeper.KeeperException.BadVersionException;
 import org.apache.zookeeper.KeeperException.NoNodeException;
@@ -14,7 +17,7 @@ import com.dianping.pigeon.config.ConfigManagerLoader;
 import com.dianping.pigeon.log.Logger;
 import com.dianping.pigeon.log.LoggerLoader;
 import com.dianping.pigeon.registry.Registry;
-import com.dianping.pigeon.registry.RegistryManager;
+import com.dianping.pigeon.registry.config.RegistryConfig;
 import com.dianping.pigeon.registry.exception.RegistryException;
 import com.dianping.pigeon.registry.util.Constants;
 import com.dianping.pigeon.registry.util.HeartBeatSupport;
@@ -40,6 +43,7 @@ public class CuratorRegistry implements Registry {
             synchronized (this) {
                 if (!inited) {
                     try {
+                        // 初始化Curator封装实现
                         client = new CuratorClient();
                         if (!client.isConnected()) {
                             throw new IllegalStateException("unable to connect to zookeeper");
@@ -92,11 +96,15 @@ public class CuratorRegistry implements Registry {
 
     void registerPersistentNode(String serviceName, String group, String serviceAddress, int weight)
             throws RegistryException {
+        // 设置权重的Path：/DP/WEIGHT/host:port
         String weightPath = Utils.getWeightPath(serviceAddress);
+        // 设置服务的Path：/DP/SERVER/serviceName
         String servicePath = Utils.getServicePath(serviceName, group);
         try {
+            // 验证Zookeeper中是否已经存在服务Path配置
             if (client.exists(servicePath, false)) {
                 Stat stat = new Stat();
+                // 获取服务Path的值，Pigeon往Zookeeper中写的规则是 host:port,host:port,...
                 String addressValue = client.getWithNodeExistsEx(servicePath, stat);
                 String[] addressArray = addressValue.split(",");
                 List<String> addressList = new ArrayList<String>();
@@ -106,14 +114,19 @@ public class CuratorRegistry implements Registry {
                         addressList.add(addr.trim());
                     }
                 }
+                // 如果列表中没有当前应用的地址，则往列表中添加当前应用的地址
                 if (!addressList.contains(serviceAddress)) {
                     addressList.add(serviceAddress);
                     Collections.sort(addressList);
+                    // 更新服务的应用地址列表
                     client.set(servicePath, StringUtils.join(addressList.iterator(), ","), stat.getVersion());
                 }
             } else {
+                // 如果注册中心没有当前服务Path，新建之
                 client.create(servicePath, serviceAddress);
             }
+
+            // 设置服务权重
             if (weight >= 0) {
                 client.set(weightPath, "" + weight);
             }
@@ -121,12 +134,14 @@ public class CuratorRegistry implements Registry {
                 logger.info("registered service to persistent node: " + servicePath);
             }
         } catch (Throwable e) {
+            // 防止并发操作时数据不一致，保证数据一致性，在这里做重试处理
             if (e instanceof BadVersionException || e instanceof NodeExistsException) {
                 try {
                     Thread.sleep(10);
                 } catch (InterruptedException ie) {
                     // ignore
                 }
+                // 重试服务注册
                 registerPersistentNode(serviceName, group, serviceAddress, weight);
             } else {
                 logger.info("failed to register service to " + servicePath, e);
@@ -148,10 +163,12 @@ public class CuratorRegistry implements Registry {
 
     public void unregisterPersistentNode(String serviceName, String group, String serviceAddress)
             throws RegistryException {
+        // 设置服务Path：/DP/SERVICE/serviceName
         String servicePath = Utils.getServicePath(serviceName, group);
         try {
             if (client.exists(servicePath, false)) {
                 Stat stat = new Stat();
+                // 获取注册中心的服务配置
                 String addressValue = client.getWithNodeExistsEx(servicePath, stat);
                 String[] addressArray = addressValue.split(",");
                 List<String> addressList = new ArrayList<String>();
@@ -161,25 +178,36 @@ public class CuratorRegistry implements Registry {
                         addressList.add(addr);
                     }
                 }
+                // 如果注册中心里有当前服务
                 if (addressList.contains(serviceAddress)) {
+                    // 移除之
                     addressList.remove(serviceAddress);
+                    // 移除完后是否变成空列表
                     if (!addressList.isEmpty()) {
                         Collections.sort(addressList);
+                        // 不是空列表，重写注册中心的配置
                         client.set(servicePath, StringUtils.join(addressList.iterator(), ","), stat.getVersion());
                     } else {
+                        // 变成了空列表
+                        // 看看这个Path在注册中心是否有子节点
                         List<String> children = client.getChildren(servicePath, false);
+                        // 有子节点
                         if (CollectionUtils.isEmpty(children)) {
+                            // 是否删除空节点，默认是true，由属性 pigeon.registry.delemptynode 进行设置
                             if (delEmptyNode) {
                                 try {
+                                    // 删除整个节点
                                     client.delete(servicePath);
                                 } catch (NoNodeException e) {
                                     logger.warn("Already deleted path:" + servicePath + ":" + e.getMessage());
                                 }
                             } else {
+                                // 不删除空节点，置空值
                                 client.set(servicePath, "", stat.getVersion());
                             }
                         } else {
                             logger.warn("Existing children [" + children + "] under path:" + servicePath);
+                            // 存在子节点，置空值
                             client.set(servicePath, "", stat.getVersion());
                         }
                     }
@@ -189,6 +217,7 @@ public class CuratorRegistry implements Registry {
                 }
             }
         } catch (Throwable e) {
+            // 保证数据一致性，重试之
             if (e instanceof BadVersionException) {
                 try {
                     Thread.sleep(10);
@@ -267,6 +296,7 @@ public class CuratorRegistry implements Registry {
 
     @Override
     public void setServerApp(String serverAddress, String app) {
+        // 设置应用名Path：/DP/APP/host:port
         String path = Utils.getAppPath(serverAddress);
         if (StringUtils.isNotBlank(app)) {
             try {
@@ -290,6 +320,7 @@ public class CuratorRegistry implements Registry {
 
     @Override
     public void setServerVersion(String serverAddress, String version) {
+        // 设置Pigeon版本号Path：/DP/VERSION/host:port
         String path = Utils.getVersionPath(serverAddress);
         if (StringUtils.isNotBlank(version)) {
             try {
@@ -476,6 +507,13 @@ public class CuratorRegistry implements Registry {
         }
     }
 
+    /**
+     * 只有当为Pigeon新增了新的数据协议的时候才会往Zookeeper里写配置，用于减少写Zookeeper的压力<br>
+     * support的值从ProviderConfig.supported中获取，在初始化ProviderConfig时确定是否是新的数据协议<br>
+     * 目前Pigeon中只对Thrift提供支持，对于服务是否是Thrift协议由ThriftUtils判断
+     * @see com.dianping.pigeon.remoting.provider.config.ProviderConfig
+     * @see com.dianping.pigeon.util.ThriftUtils
+     */
     @Override
     public void setSupportNewProtocol(String serviceAddress, String serviceName, boolean support)
             throws RegistryException {
@@ -483,6 +521,7 @@ public class CuratorRegistry implements Registry {
         if (!support) return;
 
         try {
+            // 设置协议Path：/DP/PROTOCOL/host:port
             String protocolPath = Utils.getProtocolPath(serviceAddress);
             if (client.exists(protocolPath, false)) {
                 Stat stat = new Stat();
@@ -496,12 +535,14 @@ public class CuratorRegistry implements Registry {
             }
 
         } catch (Throwable e) {
+            // 防止并发操作时数据不一致，保证数据一致性，在这里做重试处理
             if (e instanceof BadVersionException || e instanceof NodeExistsException) {
                 try {
                     Thread.sleep(10);
                 } catch (InterruptedException ie) {
                     // ignore
                 }
+                // 重新执行
                 setSupportNewProtocol(serviceAddress, serviceName, support);
             } else {
                 logger.info("failed to set protocol:" + serviceName + "of host:" + serviceAddress + " to:" + support
@@ -512,6 +553,10 @@ public class CuratorRegistry implements Registry {
         }
     }
 
+    /**
+     * 同setSupportNewProtocol一样的解释
+     * @see #setSupportNewProtocol(String, String, boolean)
+     */
     @Override
     public void unregisterSupportNewProtocol(String serviceAddress, String serviceName, boolean support)
             throws RegistryException {
@@ -526,6 +571,7 @@ public class CuratorRegistry implements Registry {
                 Map<String, Boolean> infoMap = Utils.getProtocolInfoMap(info);
                 infoMap.remove(serviceName);
 
+                // 重写数据协议配置
                 if (infoMap.size() == 0 && delEmptyNode) {
                     client.set(protocolPath, "{}", stat.getVersion());
                 } else {
@@ -534,6 +580,7 @@ public class CuratorRegistry implements Registry {
             }
 
         } catch (Throwable e) {
+            // 保证数据一致性
             if (e instanceof BadVersionException || e instanceof NodeExistsException) {
                 try {
                     Thread.sleep(10);
@@ -562,6 +609,7 @@ public class CuratorRegistry implements Registry {
 
     @Override
     public void unregisterConsoleAddress(String consoleAddress) {
+        // 设置Console Path：/DP/CONSOLE/host:port
         String clientPath = Utils.getConsolePath(consoleAddress);
         try {
             client.delete(clientPath);

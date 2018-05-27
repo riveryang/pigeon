@@ -24,47 +24,46 @@ import com.dianping.pigeon.remoting.provider.util.ProviderUtils;
  */
 public class ExceptionProcessFilter implements ServiceInvocationFilter<ProviderContext> {
 
-	private static final Logger logger = LoggerLoader.getLogger(ExceptionProcessFilter.class);
-	private static final String KEY_LOG_SERVICE_EXCEPTION = "pigeon.provider.logserviceexception";
+    private static final Logger logger = LoggerLoader.getLogger(ExceptionProcessFilter.class);
+    private static final String KEY_LOG_SERVICE_EXCEPTION = "pigeon.provider.logserviceexception";
 
-	public ExceptionProcessFilter() {
-		ConfigManagerLoader.getConfigManager().getBooleanValue(KEY_LOG_SERVICE_EXCEPTION, true);
+    public ExceptionProcessFilter() {
+        ConfigManagerLoader.getConfigManager().getBooleanValue(KEY_LOG_SERVICE_EXCEPTION, true);
 
-	}
+    }
 
+    public InvocationResponse invoke(ServiceInvocationHandler handler, ProviderContext invocationContext)
+            throws Throwable {
+        InvocationRequest request = invocationContext.getRequest();
+        InvocationResponse response = null;
+        try {
 
-	public InvocationResponse invoke(ServiceInvocationHandler handler, ProviderContext invocationContext)
-			throws Throwable {
-		InvocationRequest request = invocationContext.getRequest();
-		InvocationResponse response = null;
-		try {
+            response = handler.handle(invocationContext);
 
-			response = handler.handle(invocationContext);
-
-		} catch (InvocationTargetException e) {
-			Throwable e2 = e.getTargetException();
-			if (e2 != null) {
-				boolean isLog = ConfigManagerLoader.getConfigManager().getBooleanValue(KEY_LOG_SERVICE_EXCEPTION, true);
-				if (e2 instanceof Error) {
-					isLog = true;
-				}
-				if (isLog) {
-					logger.error(e2.getMessage(), e2);
-					invocationContext.setServiceError(e2);
-				}
-			}
-			if (request.getCallType() == Constants.CALLTYPE_REPLY) {
-				response = ProviderUtils.createServiceExceptionResponse(request, e2);
-			}
-		} catch (Throwable e) {
-			logger.error(e.getMessage(), e);
-			invocationContext.setFrameworkError(e);
-			if (request.getCallType() == Constants.CALLTYPE_REPLY
-					&& request.getMessageType() != Constants.MESSAGE_TYPE_HEART) {
-				response = ProviderUtils.createFailResponse(request, e);
-			}
-		}
-		return response;
-	}
+        } catch (InvocationTargetException e) {
+            Throwable e2 = e.getTargetException();
+            if (e2 != null) {
+                boolean isLog = ConfigManagerLoader.getConfigManager().getBooleanValue(KEY_LOG_SERVICE_EXCEPTION, true);
+                if (e2 instanceof Error) {
+                    isLog = true;
+                }
+                if (isLog) {
+                    logger.error(e2.getMessage(), e2);
+                    invocationContext.setServiceError(e2);
+                }
+            }
+            if (request.getCallType() == Constants.CALLTYPE_REPLY) {
+                response = ProviderUtils.createServiceExceptionResponse(request, e2);
+            }
+        } catch (Throwable e) {
+            logger.error(e.getMessage(), e);
+            invocationContext.setFrameworkError(e);
+            if (request.getCallType() == Constants.CALLTYPE_REPLY
+                    && request.getMessageType() != Constants.MESSAGE_TYPE_HEART) {
+                response = ProviderUtils.createFailResponse(request, e);
+            }
+        }
+        return response;
+    }
 
 }

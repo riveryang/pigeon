@@ -49,6 +49,7 @@ public class NettyServer extends AbstractServer implements Disposable {
 
     public NettyServer() {
         this.bootstrap = new ServerBootstrap(channelFactory);
+        // 设置管道
         this.bootstrap.setPipelineFactory(new NettyServerPipelineFactory(this));
         this.bootstrap.setOption("child.tcpNoDelay", true);
         this.bootstrap.setOption("child.keepAlive", true);
@@ -84,6 +85,7 @@ public class NettyServer extends AbstractServer implements Disposable {
             } else {
                 address = new InetSocketAddress(this.ip, this.port);
             }
+            // 绑定Netty Bootstrap
             channel = this.bootstrap.bind(address);
             serverConfig.setActualPort(this.port);
             this.started = true;

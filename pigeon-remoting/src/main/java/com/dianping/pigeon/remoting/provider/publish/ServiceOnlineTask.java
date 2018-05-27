@@ -13,79 +13,86 @@ import com.dianping.pigeon.remoting.ServiceFactory;
 
 public class ServiceOnlineTask implements Runnable {
 
-	private static final Logger logger = LoggerLoader.getLogger(ServiceOnlineTask.class);
+    private static final Logger logger = LoggerLoader.getLogger(ServiceOnlineTask.class);
 
-	private static ConfigManager configManager = ConfigManagerLoader.getConfigManager();
+    private static ConfigManager configManager = ConfigManagerLoader.getConfigManager();
 
-	private static final int CHECK_INTERVAL = configManager.getIntValue("pigeon.online.task.interval", 1000);
+    private static final int CHECK_INTERVAL = configManager.getIntValue("pigeon.online.task.interval", 1000);
 
-	private static volatile boolean isServiceOnlineTaskStarted = false;
+    private static volatile boolean isServiceOnlineTaskStarted = false;
 
-	private static ServiceOnlineTask serviceOnlineTask = null;
+    private static ServiceOnlineTask serviceOnlineTask = null;
 
-	private volatile boolean isStop = false;
+    private volatile boolean isStop = false;
 
-	private int delay = configManager.getIntValue("pigeon.online.task.startdelay", CHECK_INTERVAL);
+    private int delay = configManager.getIntValue("pigeon.online.task.startdelay", CHECK_INTERVAL);
 
-	public static void start() {
-		start(-1);
-	}
+    public static void start() {
+        start(-1);
+    }
 
-	public static void start(int delay) {
-		boolean enableOnlineTask = ConfigManagerLoader.getConfigManager()
-				.getBooleanValue("pigeon.online.task.enable", true);
-		if (!isServiceOnlineTaskStarted && enableOnlineTask && ServicePublisher.isAutoPublish()) {
-			serviceOnlineTask = new ServiceOnlineTask(delay);
-			logger.info("Service online task is enabled");
-			Thread t = new Thread(serviceOnlineTask);
-			t.setDaemon(true);
-			t.setName("Pigeon-Service-Online-Task");
-			t.start();
-			isServiceOnlineTaskStarted = true;
-		} else {
-			logger.info("Service online task is disabled");
-		}
-	}
+    public static void start(int delay) {
+        boolean enableOnlineTask = ConfigManagerLoader.getConfigManager().getBooleanValue("pigeon.online.task.enable",
+                true);
+        /**
+         * 启动线程条件：
+         * 1.没有执行过任务或任务已经执行完毕
+         * 2.本地或配置中心 pigeon.online.task.enable = true
+         * 3.本地或配置中心 pigeon.autopublish.enable = true && pigeon.autoregister.enable = true
+         */
+        if (!isServiceOnlineTaskStarted && enableOnlineTask && ServicePublisher.isAutoPublish()) {
+            serviceOnlineTask = new ServiceOnlineTask(delay);
+            logger.info("Service online task is enabled");
+            Thread t = new Thread(serviceOnlineTask);
+            t.setDaemon(true);
+            t.setName("Pigeon-Service-Online-Task");
+            t.start();
+            isServiceOnlineTaskStarted = true;
+        } else {
+            logger.info("Service online task is disabled");
+        }
+    }
 
-	public static void stop() {
-		if (serviceOnlineTask != null) {
-			serviceOnlineTask.setStop(true);
-			while (isServiceOnlineTaskStarted) {
-				try {
-					Thread.sleep(100);
-				} catch (InterruptedException e) {
-				}
-			}
-			serviceOnlineTask = null;
-		}
-	}
+    public static void stop() {
+        if (serviceOnlineTask != null) {
+            serviceOnlineTask.setStop(true);
+            while (isServiceOnlineTaskStarted) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                }
+            }
+            serviceOnlineTask = null;
+        }
+    }
 
-	public ServiceOnlineTask(int delay) {
-		if (delay >= 0) {
-			this.delay = delay;
-		}
-	}
+    public ServiceOnlineTask(int delay) {
+        if (delay >= 0) {
+            this.delay = delay;
+        }
+    }
 
-	public boolean isStop() {
-		return isStop;
-	}
+    public boolean isStop() {
+        return isStop;
+    }
 
-	public void setStop(boolean isStop) {
-		this.isStop = isStop;
-	}
+    public void setStop(boolean isStop) {
+        this.isStop = isStop;
+    }
 
-	public void run() {
-		logger.info("Service online task start");
-		try {
-			Thread.sleep(delay);
-			if (!isStop) {
-				ServiceFactory.online();
-			}
-		} catch (Throwable e) {
-			logger.error(e.getMessage(), e);
-		}
+    public void run() {
+        logger.info("Service online task start");
+        try {
+            Thread.sleep(delay);
+            if (!isStop) {
+                // 设置应用在线
+                ServiceFactory.online();
+            }
+        } catch (Throwable e) {
+            logger.error(e.getMessage(), e);
+        }
 
-		logger.info("Service online task end, current weight:" + ServicePublisher.getServerWeight());
-		isServiceOnlineTaskStarted = false;
-	}
+        logger.info("Service online task end, current weight:" + ServicePublisher.getServerWeight());
+        isServiceOnlineTaskStarted = false;
+    }
 }

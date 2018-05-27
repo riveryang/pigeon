@@ -43,10 +43,14 @@ public class AbstractPublishPolicy implements PublishPolicy {
     @Override
     public void doAddService(ProviderConfig providerConfig) {
         try {
+            // 验证服务名是否有效，结合 url和 serviceInterface 进行校验
             checkServiceName(providerConfig);
+            // 设置服务映射和方法映射
             ServicePublisher.addService(providerConfig);
+            // 启动NettyServer
             ServerConfig serverConfig = ProviderBootStrap.startup(providerConfig);
             providerConfig.setServerConfig(serverConfig);
+            // 服务注册
             ServicePublisher.publishService(providerConfig, false);
         } catch (Throwable t) {
             throw new RpcException("error while adding service:" + providerConfig, t);

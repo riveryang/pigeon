@@ -41,6 +41,12 @@ public class MonitorProcessFilter implements ServiceInvocationFilter<ProviderCon
 
     private static final Logger accessLogger = LoggerLoader.getLogger(com.dianping.pigeon.util.Constants.ACCESS_LOG_NAME);
 
+    /**
+     * 获取Monitor实现，默认使用CompositeMonitor
+     * 在Pigeon内部只提供了空调用的SimpleMonitor和监控组的CompositeMonitor
+     * Monitor是一个SPI，Pigeon对此开放了自定义扩展的功能，以便我们结合其他监控系统来监控Pigeon应用
+     * @see com.dianping.pigeon.monitor.CompositeMonitor
+     */
     private static final Monitor monitor = MonitorLoader.getMonitor();
 
     private static final boolean isAccessLogEnabled = ConfigManagerLoader.getConfigManager()

@@ -179,6 +179,7 @@ public class RequestThreadPoolProcessor extends AbstractRequestProcessor {
                                                        final ProviderContext providerContext) {
         requestContextMap.put(request, providerContext);
 
+        // 设置调用跟踪
         startMonitorData(request, providerContext);
 
         Callable<InvocationResponse> requestExecutor = new Callable<InvocationResponse>() {

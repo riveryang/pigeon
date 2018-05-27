@@ -15,15 +15,15 @@ import com.dianping.pigeon.remoting.provider.util.ProviderUtils;
 
 public class HeartbeatProcessFilter implements ServiceInvocationFilter<ProviderContext> {
 
-	private static final Logger logger = LoggerLoader.getLogger(HeartbeatProcessFilter.class);
+    private static final Logger logger = LoggerLoader.getLogger(HeartbeatProcessFilter.class);
 
-	@Override
-	public InvocationResponse invoke(ServiceInvocationHandler handler, ProviderContext invocationContext)
-			throws Throwable {
-		if (invocationContext.getRequest().getMessageType() == Constants.MESSAGE_TYPE_HEART) {
-			return ProviderUtils.createHeartResponse(invocationContext.getRequest());
-		}
-		return handler.handle(invocationContext);
-	}
+    @Override
+    public InvocationResponse invoke(ServiceInvocationHandler handler, ProviderContext invocationContext)
+            throws Throwable {
+        if (invocationContext.getRequest().getMessageType() == Constants.MESSAGE_TYPE_HEART) {
+            return ProviderUtils.createHeartResponse(invocationContext.getRequest());
+        }
+        return handler.handle(invocationContext);
+    }
 
 }

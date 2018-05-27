@@ -41,18 +41,29 @@ public final class SerializerFactory {
         init();
     }
 
+    /**
+     * Pigeon内部提供了一系列的序列化工具，并且提供了SerializerRegister这个SPI方便我们自定义扩展.
+     */
     public static void init() {
         if (!isInitialized) {
             synchronized (SerializerFactory.class) {
                 if (!isInitialized) {
+                    // 初始化及注册序列化工具
+                    // 1. 基于JDK的对象流实现的序列化工具
                     registerSerializer(SerializerType.JAVA, new JavaSerializer());
+                    // 2. 基于Hessian 2.x的序列化工具
                     registerSerializer(SerializerType.HESSIAN, new HessianSerializer());
+                    // 3. 基于Hessian 1.x的序列化工具
                     registerSerializer(SerializerType.HESSIAN1, new Hessian1Serializer());
+                    // 4. 基于Protostuff的序列化工具
                     registerSerializer(SerializerType.PROTO, new ProtostuffSerializer());
+                    // 5. 基于Thrift的序列化工具
                     registerSerializer(SerializerType.THRIFT, new ThriftSerializer());
+                    // 6. 基于Protobuf 3.x的序列化工具
                     registerSerializer(SerializerType.PROTOBUF3, new Protobuf3Serializer());
 
                     try {
+                        // 7. 基于FST的序列化工具
                         registerSerializer(SerializerType.FST, new FstSerializer());
                     } catch (Throwable t) {
                         logger.warn("failed to initialize fst serializer:" + t.getMessage());
@@ -66,12 +77,14 @@ public final class SerializerFactory {
                     }
                     if (supportJackson) {
                         try {
+                            // 8. 基于Jackson的序列化工具
                             registerSerializer(SerializerType.JSON, new JacksonSerializer());
                         } catch (Throwable t) {
                             logger.warn("failed to initialize jackson serializer:" + t.getMessage());
                         }
                     }
 
+                    // 9. 通过SerializerRegister SPI的自定义扩展，来设置自定义的一些序列化和反序列化的工具
                     List<SerializerRegister> serializerRegisters = ExtensionLoader.getExtensionList(SerializerRegister.class);
                     for (SerializerRegister serializerRegister : serializerRegisters) {
                         if (!serializerRegister.isRegistered()) {

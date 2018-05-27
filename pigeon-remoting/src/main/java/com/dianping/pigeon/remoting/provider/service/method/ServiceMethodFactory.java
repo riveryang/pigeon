@@ -29,117 +29,117 @@ import com.dianping.pigeon.util.LangUtils;
 
 public final class ServiceMethodFactory {
 
-	private static final Logger logger = LoggerLoader.getLogger(ContextTransferProcessFilter.class);
+    private static final Logger logger = LoggerLoader.getLogger(ContextTransferProcessFilter.class);
 
-	private static Map<String, ServiceMethodCache> methods = new ConcurrentHashMap<String, ServiceMethodCache>();
+    private static Map<String, ServiceMethodCache> methods = new ConcurrentHashMap<String, ServiceMethodCache>();
 
-	private static Set<String> ingoreMethods = new HashSet<String>();
+    private static Set<String> ingoreMethods = new HashSet<String>();
 
-	private static final String KEY_COMPACT = "pigeon.invoker.request.compact";
+    private static final String KEY_COMPACT = "pigeon.invoker.request.compact";
 
-	private static final ConfigManager configManager = ConfigManagerLoader.getConfigManager();
-	private static volatile boolean isCompact = configManager.getBooleanValue(KEY_COMPACT, true);
+    private static final ConfigManager configManager = ConfigManagerLoader.getConfigManager();
+    private static volatile boolean isCompact = configManager.getBooleanValue(KEY_COMPACT, true);
 
-	static {
-		Method[] objectMethodArray = Object.class.getMethods();
-		for (Method method : objectMethodArray) {
-			ingoreMethods.add(method.getName());
-		}
+    static {
+        Method[] objectMethodArray = Object.class.getMethods();
+        for (Method method : objectMethodArray) {
+            ingoreMethods.add(method.getName());
+        }
 
-		Method[] classMethodArray = Class.class.getMethods();
-		for (Method method : classMethodArray) {
-			ingoreMethods.add(method.getName());
-		}
+        Method[] classMethodArray = Class.class.getMethods();
+        for (Method method : classMethodArray) {
+            ingoreMethods.add(method.getName());
+        }
 
-		configManager.registerConfigChangeListener(new InnerConfigChangeListener());
-	}
+        configManager.registerConfigChangeListener(new InnerConfigChangeListener());
+    }
 
-	public static ServiceMethod getMethod(InvocationRequest request) throws InvocationFailureException {
-		String serviceName = request.getServiceName();
-		String methodName = request.getMethodName();
-		if (StringUtils.isBlank(methodName)) {
-			throw new IllegalArgumentException("method name is required");
-		}
-		String[] paramClassNames = request.getParamClassName();
-		String version = request.getVersion();
-		String newUrl = ServicePublisher.getServiceUrlWithVersion(serviceName, version);
-		if (logger.isDebugEnabled()) {
-			logger.debug("get method for service url:" + request);
-		}
-		ServiceMethodCache serviceMethodCache = getServiceMethodCache(newUrl);
-		if (serviceMethodCache == null) {
-			if (logger.isDebugEnabled()) {
-				logger.debug("no service found for version:" + version + ", use the default version of service:"
-						+ serviceName);
-			}
-			serviceMethodCache = getServiceMethodCache(serviceName);
-		}
-		if (serviceMethodCache == null) {
-			throw new BadRequestException("cannot find service for request:" + request);
-		}
-		return serviceMethodCache.getMethod(methodName, new ServiceParam(paramClassNames));
-	}
+    public static ServiceMethod getMethod(InvocationRequest request) throws InvocationFailureException {
+        String serviceName = request.getServiceName();
+        String methodName = request.getMethodName();
+        if (StringUtils.isBlank(methodName)) {
+            throw new IllegalArgumentException("method name is required");
+        }
+        String[] paramClassNames = request.getParamClassName();
+        String version = request.getVersion();
+        String newUrl = ServicePublisher.getServiceUrlWithVersion(serviceName, version);
+        if (logger.isDebugEnabled()) {
+            logger.debug("get method for service url:" + request);
+        }
+        ServiceMethodCache serviceMethodCache = getServiceMethodCache(newUrl);
+        if (serviceMethodCache == null) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("no service found for version:" + version + ", use the default version of service:"
+                        + serviceName);
+            }
+            serviceMethodCache = getServiceMethodCache(serviceName);
+        }
+        if (serviceMethodCache == null) {
+            throw new BadRequestException("cannot find service for request:" + request);
+        }
+        return serviceMethodCache.getMethod(methodName, new ServiceParam(paramClassNames));
+    }
 
-	public static ServiceMethodCache getServiceMethodCache(String url) {
-		ServiceMethodCache serviceMethodCache = methods.get(url);
-		if (serviceMethodCache == null) {
-			Map<String, ProviderConfig<?>> services = ServicePublisher.getAllServiceProviders();
-			ProviderConfig<?> providerConfig = services.get(url);
-			if (providerConfig != null) {
-				Object service = providerConfig.getService();
-				Method[] methodArray = service.getClass().getMethods();
-				serviceMethodCache = new ServiceMethodCache(url, service);
-				for (Method method : methodArray) {
-					if (!ingoreMethods.contains(method.getName())) {
-						method.setAccessible(true);
-						serviceMethodCache.addMethod(method.getName(), new ServiceMethod(service, method));
+    public static ServiceMethodCache getServiceMethodCache(String url) {
+        ServiceMethodCache serviceMethodCache = methods.get(url);
+        if (serviceMethodCache == null) {
+            Map<String, ProviderConfig<?>> services = ServicePublisher.getAllServiceProviders();
+            ProviderConfig<?> providerConfig = services.get(url);
+            if (providerConfig != null) {
+                Object service = providerConfig.getService();
+                Method[] methodArray = service.getClass().getMethods();
+                serviceMethodCache = new ServiceMethodCache(url, service);
+                for (Method method : methodArray) {
+                    if (!ingoreMethods.contains(method.getName())) {
+                        method.setAccessible(true);
+                        serviceMethodCache.addMethod(method.getName(), new ServiceMethod(service, method));
 
-						if (isCompact) {
-							int id = LangUtils.hash(url + "#" + method.getName(), 0, Integer.MAX_VALUE);
-							ServiceId serviceId = new ServiceId(url, method.getName());
-							ServiceId lastId = CompactRequest.PROVIDER_ID_MAP.putIfAbsent(id, serviceId);
-							if (lastId != null && !serviceId.equals(lastId)) {
-								throw new IllegalArgumentException("same id for service:" + url + ", method:"
-										+ method.getName());
-							}
-						}
+                        if (isCompact) {
+                            int id = LangUtils.hash(url + "#" + method.getName(), 0, Integer.MAX_VALUE);
+                            ServiceId serviceId = new ServiceId(url, method.getName());
+                            ServiceId lastId = CompactRequest.PROVIDER_ID_MAP.putIfAbsent(id, serviceId);
+                            if (lastId != null && !serviceId.equals(lastId)) {
+                                throw new IllegalArgumentException(
+                                        "same id for service:" + url + ", method:" + method.getName());
+                            }
+                        }
 
-					}
-				}
-				methods.put(url, serviceMethodCache);
-			}
-		}
-		return serviceMethodCache;
-	}
+                    }
+                }
+                methods.put(url, serviceMethodCache);
+            }
+        }
+        return serviceMethodCache;
+    }
 
-	public static void init(String url) {
-		getServiceMethodCache(url);
-	}
+    public static void init(String url) {
+        getServiceMethodCache(url);
+    }
 
-	public static Map<String, ServiceMethodCache> getAllMethods() {
-		return methods;
-	}
+    public static Map<String, ServiceMethodCache> getAllMethods() {
+        return methods;
+    }
 
-	private static class InnerConfigChangeListener implements ConfigChangeListener {
-		@Override
-		public void onKeyUpdated(String key, String value) {
-			if (key.endsWith(KEY_COMPACT)) {
-				try {
-					isCompact = Boolean.valueOf(value);
-				} catch (RuntimeException e) {
-					logger.warn("invalid value for key " + key, e);
-				}
-			}
-		}
+    private static class InnerConfigChangeListener implements ConfigChangeListener {
+        @Override
+        public void onKeyUpdated(String key, String value) {
+            if (key.endsWith(KEY_COMPACT)) {
+                try {
+                    isCompact = Boolean.valueOf(value);
+                } catch (RuntimeException e) {
+                    logger.warn("invalid value for key " + key, e);
+                }
+            }
+        }
 
-		@Override
-		public void onKeyAdded(String key, String value) {
+        @Override
+        public void onKeyAdded(String key, String value) {
 
-		}
+        }
 
-		@Override
-		public void onKeyRemoved(String key) {
+        @Override
+        public void onKeyRemoved(String key) {
 
-		}
-	}
+        }
+    }
 }

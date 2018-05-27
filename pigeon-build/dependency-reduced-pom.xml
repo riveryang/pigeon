@@ -147,14 +147,14 @@
     <dependency>
       <groupId>com.facebook.swift</groupId>
       <artifactId>swift-annotations</artifactId>
-      <version>0.16.0-mt-20151221.124547-1</version>
+      <version>0.16.0</version>
       <scope>compile</scope>
       <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>com.facebook.swift</groupId>
       <artifactId>swift-codec</artifactId>
-      <version>0.16.0-mt-20151218.091258-4</version>
+      <version>0.16.0</version>
       <scope>compile</scope>
       <optional>true</optional>
     </dependency>
@@ -266,14 +266,14 @@
     <dependency>
       <groupId>com.facebook.swift</groupId>
       <artifactId>swift-generator</artifactId>
-      <version>0.16.0-mt-20151222.050944-1</version>
+      <version>0.16.0</version>
       <scope>compile</scope>
       <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>com.facebook.swift</groupId>
       <artifactId>swift-idl-parser</artifactId>
-      <version>0.16.0-mt-20151222.051729-1</version>
+      <version>0.16.0</version>
       <scope>compile</scope>
       <optional>true</optional>
     </dependency>
@@ -285,9 +285,69 @@
       <optional>true</optional>
     </dependency>
     <dependency>
+      <groupId>com.facebook.swift</groupId>
+      <artifactId>swift-service</artifactId>
+      <version>0.16.0</version>
+      <scope>compile</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>nifty-client</artifactId>
+          <groupId>com.facebook.nifty</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>nifty-core</artifactId>
+          <groupId>com.facebook.nifty</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>configuration</artifactId>
+          <groupId>io.airlift</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>stats</artifactId>
+          <groupId>io.airlift</groupId>
+        </exclusion>
+      </exclusions>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>io.airlift</groupId>
+      <artifactId>units</artifactId>
+      <version>0.106</version>
+      <scope>compile</scope>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>javax.validation</groupId>
+      <artifactId>validation-api</artifactId>
+      <version>1.1.0.Final</version>
+      <scope>compile</scope>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.weakref</groupId>
+      <artifactId>jmxutils</artifactId>
+      <version>1.18</version>
+      <scope>compile</scope>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
       <groupId>org.antlr</groupId>
       <artifactId>stringtemplate</artifactId>
       <version>4.0.2</version>
+      <scope>compile</scope>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>io.airlift</groupId>
+      <artifactId>log</artifactId>
+      <version>0.106</version>
+      <scope>compile</scope>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>javax.inject</groupId>
+      <artifactId>javax.inject</artifactId>
+      <version>1</version>
       <scope>compile</scope>
       <optional>true</optional>
     </dependency>

@@ -9,12 +9,12 @@ import com.dianping.pigeon.remoting.provider.process.threadpool.RequestThreadPoo
 
 public class RequestProcessorFactory {
 
-	public static RequestProcessor selectProcessor() {
-		RequestProcessor requestProcessor = ExtensionLoader.getExtension(RequestProcessor.class);
-		if (requestProcessor != null) {
-			return requestProcessor;
-		} else {
-			return new RequestThreadPoolProcessor();
-		}
-	}
+    public static RequestProcessor selectProcessor() {
+        RequestProcessor requestProcessor = ExtensionLoader.getExtension(RequestProcessor.class);
+        if (requestProcessor != null) {
+            return requestProcessor;
+        } else {
+            return new RequestThreadPoolProcessor();
+        }
+    }
 }
