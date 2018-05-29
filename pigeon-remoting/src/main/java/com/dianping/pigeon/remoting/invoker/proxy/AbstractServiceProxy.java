@@ -44,6 +44,7 @@ public abstract class AbstractServiceProxy implements ServiceProxy {
         if (StringUtils.isBlank(invokerConfig.getUrl())) {
             invokerConfig.setUrl(ServiceFactory.getServiceUrl(invokerConfig));
         }
+        // 设置URL，如果不是默认的数据协议的话，就重写URL，增加协议前缀
         if (!StringUtils.isBlank(invokerConfig.getProtocol())
                 && !invokerConfig.getProtocol().equalsIgnoreCase(Constants.PROTOCOL_DEFAULT)) {
             String protocolPrefix = "@" + invokerConfig.getProtocol().toUpperCase() + "@";
@@ -58,10 +59,15 @@ public abstract class AbstractServiceProxy implements ServiceProxy {
                 service = services.get(invokerConfig);
                 if (service == null) {
                     try {
+                        // 启动客户端
                         InvokerBootStrap.startup();
-
+                        // 构建代理对象
                         service = SerializerFactory.getSerializer(invokerConfig.getSerialize()).proxyRequest(invokerConfig);
                         if (StringUtils.isNotBlank(invokerConfig.getLoadbalance())) {
+                            // 构建负载均衡对象
+                            // Pigeon中提供了4种负载均衡策略
+                            // 随机（Random）、轮询（RoundRobin）、服务端权重负载感知（WeightedAutoaware）、服务端负载感知（Autoaware）
+                            // Pigeon提供了接口供我们自定义负载均衡策略，只要实现了接口LoadBalance即可
                             LoadBalanceManager.register(invokerConfig.getUrl(), invokerConfig.getSuffix(),
                                     invokerConfig.getLoadbalance());
                         }
@@ -71,6 +77,7 @@ public abstract class AbstractServiceProxy implements ServiceProxy {
 
                     // setup region policy for service
                     try {
+                        // 设置对服务的多地区(多数据中心)的策略支持
                         regionPolicyManager.register(invokerConfig.getUrl(), invokerConfig.getSuffix(),
                                 invokerConfig.getRegionPolicy());
                     } catch (Throwable t) {

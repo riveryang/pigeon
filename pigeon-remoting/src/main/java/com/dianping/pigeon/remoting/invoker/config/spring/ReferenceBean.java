@@ -266,6 +266,7 @@ public class ReferenceBean implements FactoryBean {
             throw new IllegalArgumentException("invalid interface:" + interfaceName);
         }
         this.objType = ClassUtils.loadClass(this.classLoader, this.interfaceName.trim());
+        // 构建客户端配置
         InvokerConfig<?> invokerConfig = new InvokerConfig(this.objType, this.url, this.timeout, this.callType,
                 this.serialize, this.callback, this.suffix, this.writeBufferLimit, this.loadBalance, this.cluster,
                 this.retries, this.timeoutRetry, this.vip, this.version, this.protocol);
@@ -281,12 +282,16 @@ public class ReferenceBean implements FactoryBean {
             }
         }
 
-        checkMock(); // 降级配置检查
+        // 降级配置检查，mock类是否实现服务接口
+        checkMock();
         invokerConfig.setMock(mock);
+        // 检查AppKey存在，默认对remoteAppKey置空
         checkRemoteAppkey();
         invokerConfig.setRemoteAppKey(remoteAppKey);
 
+        // 初始化代理对象，调用链，服务配置
         this.obj = ServiceFactory.getService(invokerConfig);
+        // 配置应用负载均衡
         configLoadBalance(invokerConfig);
     }
 

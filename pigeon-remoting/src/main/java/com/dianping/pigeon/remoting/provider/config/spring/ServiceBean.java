@@ -128,6 +128,7 @@ public final class ServiceBean extends ServiceInitializeListener {
         }
 
         // 开始Server启动和服务注册全过程
+        // TODO 先看类加载的初始化项
         ServiceFactory.addServices(providerConfigList);
     }
 

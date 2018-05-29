@@ -83,10 +83,15 @@ public class ClientManager {
     }
 
     private ClientManager() {
+        // 服务可用检查线程
         this.providerAvailableListener = new ProviderAvailableListener();
+        // 配置对集群化的服务可用检查
         this.clusterListener = new DefaultClusterListener(providerAvailableListener);
+        // 添加到监听管理器
         this.clusterListenerManager.addListener(this.clusterListener);
+        // 执行服务可用检查
         providerAvailableThreadPool.execute(this.providerAvailableListener);
+        // 添加服务变更监听
         RegistryEventListener.addListener(providerChangeListener);
         RegistryEventListener.addListener(registryConnectionListener);
         RegistryEventListener.addListener(groupChangeListener);

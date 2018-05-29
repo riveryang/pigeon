@@ -35,11 +35,23 @@ import com.dianping.pigeon.remoting.provider.publish.ServicePublisher;
 public class ServiceFactory {
 
     private static Logger logger = LoggerLoader.getLogger(ServiceFactory.class);
+    /**
+     * 使用 ServiceProxy SPI获取扩展点实现，默认情况下使用 DefaultServiceProxy
+     * ServiceProxy是客户端的工具，是生成客户端代理的核心
+     * @see com.dianping.pigeon.remoting.invoker.proxy.DefaultServiceProxy
+     */
     private static ServiceProxy serviceProxy = ServiceProxyLoader.getServiceProxy();
+    /**
+     * 使用 PublishPolicy SPI获取扩展点实现，默认情况下使用 DefaultPublishPolicy
+     * PublishPolicy是服务端的工具，是服务发布的核心
+     * @see com.dianping.pigeon.remoting.provider.publish.DefaultPublishPolicy
+     */
     private static PublishPolicy publishPolicy = PublishPolicyLoader.getPublishPolicy();
 
     static {
         try {
+            // ProviderBootstrap初始化
+            // 主要用于初始化各类工具及JettyHttpServer
             ProviderBootStrap.init();
         } catch (Throwable t) {
             logger.error("error while initializing service factory:", t);

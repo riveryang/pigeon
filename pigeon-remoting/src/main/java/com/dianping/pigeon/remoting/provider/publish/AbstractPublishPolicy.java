@@ -27,6 +27,11 @@ import java.io.InputStreamReader;
 public class AbstractPublishPolicy implements PublishPolicy {
 
     private static final Logger logger = LoggerLoader.getLogger(AbstractPublishPolicy.class);
+    /**
+     * 使用 ConfigManager SPI获取扩展点实现，默认情况下使用 PropertiesFileConfigManager
+     * ConfigManager是配置管理工具，可以集成外部的工具（Lion等）来实现在线配置
+     * @see com.dianping.pigeon.config.file.PropertiesFileConfigManager
+     */
     private static final ConfigManager configManager = ConfigManagerLoader.getConfigManager();
     private static final boolean IS_CHECK_SERVICE_EXCEPTION_DEFAULT
             = configManager.getBooleanValue("pigeon.check.is.stock.service.failure.exception.default", true);
