@@ -246,9 +246,9 @@ public final class ServicePublisher {
 
         if (weight >= 0) {
             if (!serverWeightCache.containsKey(serverAddress)) {
-                // 往注册中心写当前应用的应用名
+                // 往注册中心写当前应用服务的应用名
                 RegistryManager.getInstance().setServerApp(serverAddress, configManager.getAppName());
-                // 往注册中心写当前应用的Pigeon版本号
+                // 往注册中心写当前应用服务的Pigeon版本号
                 RegistryManager.getInstance().setServerVersion(serverAddress, VersionUtils.VERSION);
             }
             serverWeightCache.put(serverAddress, weight);
@@ -273,9 +273,9 @@ public final class ServicePublisher {
             RegistryManager.getInstance().setServerWeight(serverAddress, weight);
             /** 在服务注册阶段已经设置过应用名和版本号信息? */
             if (!serverWeightCache.containsKey(serverAddress)) {
-                // 往注册中心写当前应用的应用名
+                // 往注册中心写当前应用服务的应用名
                 RegistryManager.getInstance().setServerApp(serverAddress, configManager.getAppName());
-                // 往注册中心写当前应用的Pigeon版本号
+                // 往注册中心写当前应用服务的Pigeon版本号
                 RegistryManager.getInstance().setServerVersion(serverAddress, VersionUtils.VERSION);
             }
             serverWeightCache.put(serverAddress, weight);

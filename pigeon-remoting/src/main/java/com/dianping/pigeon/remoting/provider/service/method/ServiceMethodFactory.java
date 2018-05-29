@@ -83,6 +83,7 @@ public final class ServiceMethodFactory {
     public static ServiceMethodCache getServiceMethodCache(String url) {
         ServiceMethodCache serviceMethodCache = methods.get(url);
         if (serviceMethodCache == null) {
+            // 获取所有本地服务配置
             Map<String, ProviderConfig<?>> services = ServicePublisher.getAllServiceProviders();
             ProviderConfig<?> providerConfig = services.get(url);
             if (providerConfig != null) {
@@ -90,6 +91,7 @@ public final class ServiceMethodFactory {
                 Method[] methodArray = service.getClass().getMethods();
                 serviceMethodCache = new ServiceMethodCache(url, service);
                 for (Method method : methodArray) {
+                    // 过滤屏蔽的，不发布的服务方法
                     if (!ingoreMethods.contains(method.getName())) {
                         method.setAccessible(true);
                         serviceMethodCache.addMethod(method.getName(), new ServiceMethod(service, method));

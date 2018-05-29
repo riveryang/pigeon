@@ -18,49 +18,49 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class ExtensionLoader {
 
-	private static Map<Class<?>, Object> extensionMap = new ConcurrentHashMap<Class<?>, Object>();
+    private static Map<Class<?>, Object> extensionMap = new ConcurrentHashMap<Class<?>, Object>();
 
-	private static Map<Class<?>, List<?>> extensionListMap = new ConcurrentHashMap<Class<?>, List<?>>();
+    private static Map<Class<?>, List<?>> extensionListMap = new ConcurrentHashMap<Class<?>, List<?>>();
 
-	private ExtensionLoader() {
-	}
+    private ExtensionLoader() {
+    }
 
-	public static <T> T getExtension(Class<T> clazz) {
-		T extension = (T) extensionMap.get(clazz);
-		if (extension == null) {
-			extension = newExtension(clazz);
-			if (extension != null) {
-				extensionMap.put(clazz, extension);
-			}
-		}
-		return extension;
-	}
+    public static <T> T getExtension(Class<T> clazz) {
+        T extension = (T) extensionMap.get(clazz);
+        if (extension == null) {
+            extension = newExtension(clazz);
+            if (extension != null) {
+                extensionMap.put(clazz, extension);
+            }
+        }
+        return extension;
+    }
 
-	public static <T> List<T> getExtensionList(Class<T> clazz) {
-		List<T> extensions = (List<T>) extensionListMap.get(clazz);
-		if (extensions == null) {
-			extensions = newExtensionList(clazz);
-			if (!extensions.isEmpty()) {
-				extensionListMap.put(clazz, extensions);
-			}
-		}
-		return extensions;
-	}
+    public static <T> List<T> getExtensionList(Class<T> clazz) {
+        List<T> extensions = (List<T>) extensionListMap.get(clazz);
+        if (extensions == null) {
+            extensions = newExtensionList(clazz);
+            if (!extensions.isEmpty()) {
+                extensionListMap.put(clazz, extensions);
+            }
+        }
+        return extensions;
+    }
 
-	public static <T> T newExtension(Class<T> clazz) {
-		ServiceLoader<T> serviceLoader = ServiceLoader.load(clazz);
-		for (T service : serviceLoader) {
-			return service;
-		}
-		return null;
-	}
+    public static <T> T newExtension(Class<T> clazz) {
+        ServiceLoader<T> serviceLoader = ServiceLoader.load(clazz);
+        for (T service : serviceLoader) {
+            return service;
+        }
+        return null;
+    }
 
-	public static <T> List<T> newExtensionList(Class<T> clazz) {
-		ServiceLoader<T> serviceLoader = ServiceLoader.load(clazz);
-		List<T> extensions = new ArrayList<T>();
-		for (T service : serviceLoader) {
-			extensions.add(service);
-		}
-		return extensions;
-	}
+    public static <T> List<T> newExtensionList(Class<T> clazz) {
+        ServiceLoader<T> serviceLoader = ServiceLoader.load(clazz);
+        List<T> extensions = new ArrayList<T>();
+        for (T service : serviceLoader) {
+            extensions.add(service);
+        }
+        return extensions;
+    }
 }

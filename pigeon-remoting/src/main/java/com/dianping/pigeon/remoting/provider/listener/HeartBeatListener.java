@@ -115,7 +115,7 @@ public class HeartBeatListener extends Thread {
                 Long heartbeat = System.currentTimeMillis();
                 // 写心跳
                 if(serviceHeartBeatCache.size() > 0) {
-                    // 更新注册中心当前应用的时间
+                    // 更新注册中心当前应用服务的时间
                     // 规则：/DP/HEARTBEAT/host:port --> 当前时间
                     registryManager.updateHeartBeat(serviceAddress, heartbeat);
                 }

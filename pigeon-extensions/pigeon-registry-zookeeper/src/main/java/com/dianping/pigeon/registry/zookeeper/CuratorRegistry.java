@@ -114,7 +114,7 @@ public class CuratorRegistry implements Registry {
                         addressList.add(addr.trim());
                     }
                 }
-                // 如果列表中没有当前应用的地址，则往列表中添加当前应用的地址
+                // 如果列表中没有当前应用服务的地址，则往列表中添加当前应用服务的地址
                 if (!addressList.contains(serviceAddress)) {
                     addressList.add(serviceAddress);
                     Collections.sort(addressList);

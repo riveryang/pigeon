@@ -93,6 +93,7 @@ public final class ProviderBootStrap {
     }
 
     public static ServerConfig startup(ProviderConfig<?> providerConfig) {
+        // 最初构建的配置
         ServerConfig serverConfig = providerConfig.getServerConfig();
         if (serverConfig == null) {
             throw new IllegalArgumentException("server config is required");
