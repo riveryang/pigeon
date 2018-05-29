@@ -66,6 +66,7 @@ public class JettyHttpServer extends AbstractServer implements Disposable {
         Context context = new Context(Context.SESSIONS);
         context.setContextPath("/");
         server.addHandler(context);
+        // 本地调试service时通过此路由进入DispatchServlet
         context.addServlet(new ServletHolder(new DispatcherServlet()), "/service");
         List<JettyHttpServerProcessor> processors = ExtensionLoader.getExtensionList(JettyHttpServerProcessor.class);
         if (processors != null) {
@@ -84,6 +85,7 @@ public class JettyHttpServer extends AbstractServer implements Disposable {
             server = newServer(serverConfig);
             retries++;
             try {
+                // 启动Jetty
                 server.start();
                 serverConfig.setIp(configManager.getLocalIp());
                 serverConfig.setHttpPort(this.port);

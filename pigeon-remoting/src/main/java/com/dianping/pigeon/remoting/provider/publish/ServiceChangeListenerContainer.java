@@ -9,13 +9,13 @@ import java.util.List;
 
 public class ServiceChangeListenerContainer {
 
-	private static List<ServiceChangeListener> listeners = new ArrayList<ServiceChangeListener>();
+    private static List<ServiceChangeListener> listeners = new ArrayList<ServiceChangeListener>();
 
-	public static void addServiceChangeListener(ServiceChangeListener listener) {
-		listeners.add(listener);
-	}
+    public static void addServiceChangeListener(ServiceChangeListener listener) {
+        listeners.add(listener);
+    }
 
-	public static List<ServiceChangeListener> getListeners() {
-		return listeners;
-	}
+    public static List<ServiceChangeListener> getListeners() {
+        return listeners;
+    }
 }

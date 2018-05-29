@@ -32,100 +32,102 @@ import com.dianping.pigeon.remoting.provider.util.ProviderUtils;
 
 public class HttpServerHandler implements HttpHandler {
 
-	protected final Logger logger = LoggerLoader.getLogger(this.getClass());
+    protected final Logger logger = LoggerLoader.getLogger(this.getClass());
 
-	private Server server;
+    private Server server;
 
-	protected static Map<Long, HttpCallbackFuture> callbacks = new ConcurrentHashMap<Long, HttpCallbackFuture>();
+    protected static Map<Long, HttpCallbackFuture> callbacks = new ConcurrentHashMap<Long, HttpCallbackFuture>();
 
-	public HttpServerHandler(Server server) {
-		this.server = server;
-	}
+    public HttpServerHandler(Server server) {
+        this.server = server;
+    }
 
-	@Override
-	public void handle(HttpServletRequest request, HttpServletResponse response) throws Exception {
-		long createTime = System.currentTimeMillis();
-		Object obj;
-		String customize = request.getParameter("customize");
-		if("true".equalsIgnoreCase(customize)) {
-			HttpAdapter httpAdapter = ExtensionLoader.getExtension(HttpAdapter.class);
-			if(httpAdapter != null) {
-				obj = HttpUtils.createDefaultRequest(httpAdapter.convert(request));
-			} else {
-				throw new IllegalArgumentException("ServiceLoader httpAdapter not found!");
-			}
-		} else if("service".equalsIgnoreCase(customize)) {
-			String serviceName = request.getParameter("url");
-			if(StringUtils.isNotBlank(serviceName)) {
-				HttpAdapter httpAdapter = HttpAdapterFactory.getHttpAdapters().get(serviceName);
-				if(httpAdapter != null) {
-					obj = HttpUtils.createDefaultRequest(httpAdapter.convert(request));
-				} else {
-					throw new IllegalArgumentException("HttpAdapter not found!");
-				}
-			} else {
-				throw new IllegalArgumentException("serviceName can't be blank!");
-			}
-		} else {
-			String serialize = request.getParameter("serialize");
-			if (serialize == null) {
-				serialize = request.getHeader("serialize");
-			}
-			if (StringUtils.isBlank(serialize)) {
-				response.setStatus(200);
-				return;
-			}
+    @Override
+    public void handle(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        long createTime = System.currentTimeMillis();
+        Object obj;
+        String customize = request.getParameter("customize");
+        if ("true".equalsIgnoreCase(customize)) {
+            HttpAdapter httpAdapter = ExtensionLoader.getExtension(HttpAdapter.class);
+            if (httpAdapter != null) {
+                obj = HttpUtils.createDefaultRequest(httpAdapter.convert(request));
+            } else {
+                throw new IllegalArgumentException("ServiceLoader httpAdapter not found!");
+            }
+        } else if ("service".equalsIgnoreCase(customize)) {
+            String serviceName = request.getParameter("url");
+            if (StringUtils.isNotBlank(serviceName)) {
+                HttpAdapter httpAdapter = HttpAdapterFactory.getHttpAdapters().get(serviceName);
+                if (httpAdapter != null) {
+                    obj = HttpUtils.createDefaultRequest(httpAdapter.convert(request));
+                } else {
+                    throw new IllegalArgumentException("HttpAdapter not found!");
+                }
+            } else {
+                throw new IllegalArgumentException("serviceName can't be blank!");
+            }
+        } else {
+            String serialize = request.getParameter("serialize");
+            if (serialize == null) {
+                serialize = request.getHeader("serialize");
+            }
+            if (StringUtils.isBlank(serialize)) {
+                response.setStatus(200);
+                return;
+            }
 
-			if (!request.getMethod().equalsIgnoreCase("POST")) {
-				if (SerializerType.isJson(Byte.parseByte(serialize))) {
-					response.setStatus(200);
-				} else {
-					response.setStatus(500);
-				}
-				return;
+            if (!request.getMethod().equalsIgnoreCase("POST")) {
+                if (SerializerType.isJson(Byte.parseByte(serialize))) {
+                    response.setStatus(200);
+                } else {
+                    response.setStatus(500);
+                }
+                return;
 
-			} else {
-				Serializer serializer = SerializerFactory.getSerializer(Byte.parseByte(serialize));
-				obj = serializer.deserializeRequest(request.getInputStream());
-			}
-		}
+            } else {
+                Serializer serializer = SerializerFactory.getSerializer(Byte.parseByte(serialize));
+                obj = serializer.deserializeRequest(request.getInputStream());
+            }
+        }
 
-		InvocationRequest invocationRequest;
-		if (!(obj instanceof InvocationRequest)) {
-			throw new IllegalArgumentException("invalid request type:" + obj.getClass());
-		} else {
-			invocationRequest = (InvocationRequest) obj;
-		}
-		invocationRequest.getParameters();
-		invocationRequest.setServiceName(HttpUtils.getDefaultServiceUrl(invocationRequest.getServiceName()));
-		invocationRequest.setCreateMillisTime(createTime);
-		ProviderContext invocationContext = new DefaultProviderContext(invocationRequest, new HttpChannel(request,
-				response));
-		Future<InvocationResponse> invocationResponse = null;
-		try {
-			callbacks.put(invocationRequest.getSequence(), new HttpCallbackFuture(invocationRequest, invocationContext));
+        InvocationRequest invocationRequest;
+        if (!(obj instanceof InvocationRequest)) {
+            throw new IllegalArgumentException("invalid request type:" + obj.getClass());
+        } else {
+            invocationRequest = (InvocationRequest) obj;
+        }
+        invocationRequest.getParameters();
+        invocationRequest.setServiceName(HttpUtils.getDefaultServiceUrl(invocationRequest.getServiceName()));
+        invocationRequest.setCreateMillisTime(createTime);
+        ProviderContext invocationContext = new DefaultProviderContext(invocationRequest,
+                new HttpChannel(request, response));
+        Future<InvocationResponse> invocationResponse = null;
+        try {
+            callbacks.put(invocationRequest.getSequence(),
+                    new HttpCallbackFuture(invocationRequest, invocationContext));
 
-			invocationResponse = server.processRequest(invocationRequest, invocationContext);
-			if (invocationResponse != null) {
-				if(Constants.REPLY_MANUAL || invocationContext.isAsync()) {
-					callbacks.get(invocationRequest.getSequence()).getResponse(invocationRequest.getTimeout());
-				}
-				invocationResponse.get();
-			}
-		} catch (Throwable e) {
-			if (invocationResponse != null && !invocationResponse.isCancelled()) {
-				invocationResponse.cancel(true);
-			}
-			String msg = "process http request[" + request.getRemoteAddr() + "] failed:" + invocationRequest;
-			// 心跳消息只返回正常的, 异常不返回
-			if (invocationRequest.getCallType() == Constants.CALLTYPE_REPLY
-					&& invocationRequest.getMessageType() != Constants.MESSAGE_TYPE_HEART) {
-				invocationContext.getChannel().write(invocationContext, ProviderUtils.createFailResponse(invocationRequest, e));
-				logger.error(msg, e);
-			}
-		} finally {
-			callbacks.remove(invocationRequest.getSequence());
-		}
-	}
+            invocationResponse = server.processRequest(invocationRequest, invocationContext);
+            if (invocationResponse != null) {
+                if (Constants.REPLY_MANUAL || invocationContext.isAsync()) {
+                    callbacks.get(invocationRequest.getSequence()).getResponse(invocationRequest.getTimeout());
+                }
+                invocationResponse.get();
+            }
+        } catch (Throwable e) {
+            if (invocationResponse != null && !invocationResponse.isCancelled()) {
+                invocationResponse.cancel(true);
+            }
+            String msg = "process http request[" + request.getRemoteAddr() + "] failed:" + invocationRequest;
+            // 心跳消息只返回正常的, 异常不返回
+            if (invocationRequest.getCallType() == Constants.CALLTYPE_REPLY
+                    && invocationRequest.getMessageType() != Constants.MESSAGE_TYPE_HEART) {
+                invocationContext.getChannel().write(invocationContext,
+                        ProviderUtils.createFailResponse(invocationRequest, e));
+                logger.error(msg, e);
+            }
+        } finally {
+            callbacks.remove(invocationRequest.getSequence());
+        }
+    }
 
 }

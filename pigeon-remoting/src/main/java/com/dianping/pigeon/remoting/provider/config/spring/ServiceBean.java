@@ -28,10 +28,19 @@ public final class ServiceBean extends ServiceInitializeListener {
     private int httpPort = ServerConfig.DEFAULT_HTTP_PORT;
     private boolean autoSelectPort = true;
     private boolean cancelTimeout = Constants.DEFAULT_TIMEOUT_CANCEL;
+    /**
+     * 使用 ConfigManager SPI获取扩展点实现，默认情况下使用 PropertiesFileConfigManager
+     * ConfigManager是配置管理工具，可以集成外部的工具（Lion等）来实现在线配置
+     * @see com.dianping.pigeon.config.file.PropertiesFileConfigManager
+     */
     private ConfigManager configManager = ConfigManagerLoader.getConfigManager();
+    // 60
     private int corePoolSize = Constants.PROVIDER_POOL_CORE_SIZE;
+    // 500
     private int maxPoolSize = Constants.PROVIDER_POOL_MAX_SIZE;
+    // 1000
     private int workQueueSize = Constants.PROVIDER_POOL_QUEUE_SIZE;
+    // true
     private boolean enableTest = configManager.getBooleanValue(Constants.KEY_TEST_ENABLE,
             Constants.DEFAULT_TEST_ENABLE);
 

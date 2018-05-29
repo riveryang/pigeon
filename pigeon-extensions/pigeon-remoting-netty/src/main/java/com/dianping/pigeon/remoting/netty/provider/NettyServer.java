@@ -68,10 +68,13 @@ public class NettyServer extends AbstractServer implements Disposable {
     @Override
     public void doStart(ServerConfig serverConfig) {
         if (!started) {
+            // 是否自动获取可用端口
             if (serverConfig.isAutoSelectPort()) {
+                // 获取一个真正可用的端口，防止端口占用导致服务启动失败
                 int availablePort = getAvailablePort(serverConfig.getPort());
                 this.port = availablePort;
             } else {
+                // 若端口占用，直接退出进程
                 if (NetUtils.isPortInUse(serverConfig.getPort())) {
                     logger.error("unable to start netty server on port " + serverConfig.getPort()
                             + ", the port is in use");
@@ -87,6 +90,7 @@ public class NettyServer extends AbstractServer implements Disposable {
             }
             // 绑定Netty Bootstrap
             channel = this.bootstrap.bind(address);
+            // 重新设置可用端口
             serverConfig.setActualPort(this.port);
             this.started = true;
         }

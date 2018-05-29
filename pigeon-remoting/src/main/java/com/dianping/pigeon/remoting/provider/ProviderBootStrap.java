@@ -10,13 +10,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.dianping.pigeon.config.ConfigManager;
-import com.dianping.pigeon.config.ConfigManagerLoader;
 import com.dianping.pigeon.extension.ExtensionLoader;
 import com.dianping.pigeon.log.Logger;
 import com.dianping.pigeon.log.LoggerLoader;
-import com.dianping.pigeon.monitor.Monitor;
-import com.dianping.pigeon.monitor.MonitorLoader;
 import com.dianping.pigeon.registry.RegistryManager;
 import com.dianping.pigeon.registry.exception.RegistryException;
 import com.dianping.pigeon.remoting.common.codec.SerializerFactory;

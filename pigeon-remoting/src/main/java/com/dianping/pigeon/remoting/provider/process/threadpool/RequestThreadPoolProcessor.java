@@ -258,6 +258,7 @@ public class RequestThreadPoolProcessor extends AbstractRequestProcessor {
         pool = getConfigThreadPool(request);
 
         // spring actives
+        // 如果设置了方法级别的线程隔离，则使用方法级别的线程池，否则选择服务级别的线程池
         if (pool == null && !CollectionUtils.isEmpty(methodThreadPools)) {
             pool = methodThreadPools.get(methodKey);
         }

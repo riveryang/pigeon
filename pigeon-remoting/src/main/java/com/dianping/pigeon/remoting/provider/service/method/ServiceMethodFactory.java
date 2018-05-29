@@ -41,11 +41,13 @@ public final class ServiceMethodFactory {
     private static volatile boolean isCompact = configManager.getBooleanValue(KEY_COMPACT, true);
 
     static {
+        // 过滤 Object 里的所有方法，不开放给Pigeon作为服务方法调用
         Method[] objectMethodArray = Object.class.getMethods();
         for (Method method : objectMethodArray) {
             ingoreMethods.add(method.getName());
         }
 
+        // 过滤 Class 里的所有的方法，不开放给Pigeon作为服务方法调用
         Method[] classMethodArray = Class.class.getMethods();
         for (Method method : classMethodArray) {
             ingoreMethods.add(method.getName());
